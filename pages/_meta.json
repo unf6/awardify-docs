@@ -1,0 +1,26 @@
+{
+  "index": "Introduction",
+  "basics": "Basics",
+  "custom-dbs": "Custom Databases",
+  "events": "Events",
+  "contact": {
+    "title": "Discord",
+    "type": "page",
+    "href": "https://discord.gg/Y72tMTjT",
+    "newWindow": true
+  },
+  "space": {
+    "title": " ",
+    "type": "page"
+  },
+  "Github": {
+    "title": "Github",
+    "type": "page",
+    "href": "https://github.com/TejasLamba2006/awardify",
+    "newWindow": true
+  },
+  "space2": {
+    "title": " ",
+    "type": "page"
+  }
+}

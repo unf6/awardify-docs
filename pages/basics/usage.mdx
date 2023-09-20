@@ -1,0 +1,196 @@
+import { Steps } from 'nextra/components'
+import { Callout } from 'nextra/components'
+import { Tabs, Tab } from 'nextra/components'
+import Image from 'next/image'
+
+# __Example Bot__
+
+<Callout type="info">
+  You can find full example bot [Example](https://github.com/unf6/awardify-example).
+</Callout>
+
+<Tabs items={['Js', 'Ts']}>
+<Tab>
+```js copy filename="index.js"
+const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const { GiveawaysManager } = require("awardify");
+const ms = require("ms");
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GiveawaysManager.DirectMessages
+    ]
+});
+
+
+client.manager = new GiveawaysManager(client, {
+    storage: "./giveaways.json",
+    default: {
+        botsCanWin: false,
+        embedColor: "#FF0000",
+        reaction: "🎉",
+        lastChance: {
+            enabled: true,
+            content: '⚠️ **LAST CHANCE TO ENTER !** ⚠️',
+            threshold: 10000,
+            embedColor: '#FF0000'
+        }
+    }
+});
+// We now have a client.giveawaysManager property to manage our giveaways!
+
+client.on("ready", () => {
+    console.log(`Logged in as ${client.user.tag}`);
+});
+
+
+client.manager.on('giveawayEnded', (giveaway, winners) => {
+    console.log(
+        `Giveaway #${giveaway.messageId} ended! Winners: ${winners.map((member) => member.user.username).join(', ')}`
+    );
+});
+
+client.manager.on('giveawayMemberJoined', (giveaway, member, interaction) => {
+    interaction.reply({
+        content: `${member.user.username} joined the giveaway!`
+    });
+    giveaway.entrantIds.push(interaction.member.id);
+});
+client.manager.on('giveawayMemberTryLeft', (giveaway, member, interaction) => {
+    interaction.reply({
+        content: `giveawayMemberTryLeft`
+    });
+});
+client.manager.on('giveawayMemberAlreadyJoined', async (giveaway, member, interaction) => {
+    // send a ephemral reply asking him he wants to leave the giveaway
+    const question = await interaction.reply({
+        content: 'You have already joined this giveaway. Do you want to leave it?',
+        ephemeral: true,
+        components: [
+            new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('leave').setLabel('Leave').setStyle(ButtonStyle.Danger)
+            )
+        ]
+    });
+    const filter = (i) => i.user.id === member.user.id;
+    const collecter = await question.createMessageComponentCollector({ filter, time: 30000 });
+    collecter.on('collect', async (i) => {
+         // remove the member from the entrantIds
+    const index = giveaway.entrantIds.indexOf(member.id);
+    if (index !== -1) {
+        giveaway.entrantIds.splice(index, 1);
+    }
+    //tell him we have removed him
+    await i.reply({
+        content: 'You have left the giveaway.'
+    })
+    })
+    collecter.on('end', async (collected, reason) => {
+        if (reason === 'time') {
+            await question.delete();
+        }
+    });
+});
+
+
+client.login("Discord-Bot-Token-Here");
+```
+</Tab>
+<Tab>
+```js copy filename="index.js" showLineNumbers {30,57,66}
+
+import { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
+import { GiveawaysManager } from "awardify";
+import ms from "ms";
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GiveawaysManager.DirectMessages
+    ]
+});
+
+client.manager = new GiveawaysManager(client, {
+    storage: "./giveaways.json",
+    default: {
+        botsCanWin: false,
+        embedColor: "#FF0000",
+        reaction: "🎉",
+        lastChance: {
+            enabled: true,
+            content: '⚠️ **LAST CHANCE TO ENTER !** ⚠️',
+            threshold: 10000,
+            embedColor: '#FF0000'
+        }
+    }
+});
+
+// We now have a client.giveawaysManager property to manage our giveaways!
+
+client.on("ready", () => {
+    console.log(`Logged in as ${client.user.tag}`);
+});
+
+client.manager.on('giveawayEnded', (giveaway, winners) => {
+    console.log(
+        `Giveaway #${giveaway.messageId} ended! Winners: ${winners.map((member) => member.user.username).join(', ')}`
+    );
+});
+
+client.manager.on('giveawayMemberJoined', (giveaway, member, interaction) => {
+    interaction.reply({
+        content: `${member.user.username} joined the giveaway!`
+    });
+    giveaway.entrantIds.push(interaction.member!.id);
+});
+
+client.manager.on('giveawayMemberTryLeft', (giveaway, member, interaction) => {
+    interaction.reply({
+        content: `giveawayMemberTryLeft`
+    });
+});
+
+client.manager.on('giveawayMemberAlreadyJoined', async (giveaway, member, interaction) => {
+    // send an ephemeral reply asking if they want to leave the giveaway
+    const question = await interaction.reply({
+        content: 'You have already joined this giveaway. Do you want to leave it?',
+        ephemeral: true,
+        components: [
+            new ActionRowBuilder()<ButtonBuilder>.addComponents(
+                new ButtonBuilder().setCustomId('leave').setLabel('Leave').setStyle(ButtonStyle.Danger)
+            )
+        ]
+    });
+
+    const filter = (i) => i.user.id === member.user.id;
+    const collector = await question.createMessageComponentCollector({ filter, time: 30000 });
+
+    collector.on('collect', async (i) => {
+        // remove the member from the entrantIds
+        const index = giveaway.entrantIds.indexOf(member.id);
+        if (index !== -1) {
+            giveaway.entrantIds.splice(index, 1);
+        }
+
+        // tell them we have removed them
+        await i.reply({
+            content: 'You have left the giveaway.'
+        });
+    });
+
+    collector.on('end', async (collected, reason) => {
+        if (reason === 'time') {
+            await question.delete();
+        }
+    });
+});
+
+client.login("Discord-Bot-Token-Here");
+```
+</Tab>
+</Tabs>
